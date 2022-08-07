@@ -1,0 +1,27 @@
+SFML_DIR = ../SFML-2.5.1/
+
+CC = g++
+
+CC_FLAGS = -c -Wall -static-libgcc -static-libstdc++
+
+INC = -I $(SFML_DIR)include
+
+SFML = -lsfml-graphics -lsfml-system -lsfml-window -lsfml-audio    
+
+LIB = -L $(SFML_DIR)lib
+
+all: main.o
+	@$(CC) main.o $(SFML) $(INC) $(LIB) -o sandbox.exe 
+	@echo FINISHED BUILD.
+
+
+main.o: main.cpp
+	@$(CC) main.cpp $(CC_FLAGS) $(INC) -o main.o
+
+run: 
+	@.\sandbox.exe
+	@echo Closed!
+
+clean:
+	@del *.o, *.exe
+	@echo Cleaned!

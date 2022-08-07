@@ -1,0 +1,4 @@
+-I
+..\SFML-2.5.1\headers
+-I
+..\SFML-2.5.1\include
