@@ -1,4 +1,5 @@
 #include <SFML/Graphics.hpp>
+#include <math.h>
 #include <iostream>
 #include <vector>
 #include <math.h>
@@ -30,7 +31,7 @@ sf::Color getColor(tile_type type)
             color = sf::Color::Blue;
             break;
         case sand:
-            color = sf::Color::Red;
+            color = sf::Color(194, 178, 128);
             break;
         case dirt:
             color = sf::Color::Cyan;
@@ -91,6 +92,12 @@ struct Tile
         element = _element;
         moved = false;
     }
+    void Update(const Tile& t)
+    {
+       pos = t.pos;
+       type = t.type;
+       element = t.element;
+    }
 
     v2 pos;
     tile_type type;
@@ -106,9 +113,47 @@ v2 getMousePosition(sf::RenderWindow* window)
 // HERE
 
 // TODO: Make the relation between the colors and the tiles position, and add a mouse recognition
-// TODO: To know if it's right make even be red, and odd be blue. 
+// NOTE: Not update the color don't know why
 class Grid
 {
+    private:
+    void change_tiles(int t1, int t2)
+    {
+        Tile temp;
+        temp = tile[t1];
+        tile[t1] = tile[t2];
+        tile[t2] = temp;
+        setColor(t1, tile[t1].type);
+        setColor(t2, tile[t2].type);
+    }
+    void update_physics()
+    {
+        for (size_t i = 0; i < grid_range; ++i)
+        {
+            if (tile[i].type == tile_type::sand)
+            {
+                if (i <= grid_range - grid_size)
+                {
+                    Tile temp(tile[i]);
+                    tile[i].Update(tile[i + grid_size]);
+                    tile[i + grid_size].Update(temp);
+                    setColor(i, tile[i].type);
+                    setColor(i + grid_size, tile[i+grid_size].type);
+                    // setColor(i + grid_size, tile[i].type);
+                }
+            }
+        }
+    }
+    void update_colors()
+    {
+        for (size_t i = 0; i < grid_range; ++i)
+        {
+            if (image.getPixel(tile[i].pos.x * TILE_SIZE, tile[i].pos.y * TILE_SIZE) != getColor(tile[i].type))
+            {
+               setColor(i, tile[i].type);
+            }
+        }
+    }
     public:
     Grid() = delete;
     Grid(uint8_t _grid_size):
@@ -142,24 +187,8 @@ class Grid
             grid_spr.setPosition(x, y);
         }
     }
-    void debugTest(int _x, int _y)
-    {
-        for (int i = 0; i < grid_range; ++i)
-        {
-            if (tile[i].pos.x == _x && tile[i].pos.y == _y)
-            {
-                printf("X:%d Y:%d I:%d\n", _x, _y, i);
-            }
-        }
 
-    }
-
-    void changeTile()
-    {
-
-    }
-
-    void setColor(int n, tile_type color)
+    void setColor(unsigned int n, tile_type color)
     {
         int x = tile[n].pos.x * TILE_SIZE;
         int y = tile[n].pos.y * TILE_SIZE;
@@ -170,7 +199,7 @@ class Grid
                 image.setPixel(x + row, y + col, getColor(color));
             }
         }
-        printf("X: %d - Y: %d\n", tile[n].pos.x, tile[n].pos.y);
+        tile[n].type = color;
         texture.loadFromImage(image);
         grid_spr.setTexture(texture);
     }
@@ -187,12 +216,14 @@ class Grid
                 int n_x = X / TILE_SIZE;
                 int n_y = Y / TILE_SIZE;
                 
-                int i = floor((double)n_y * (double)grid_size + (double)n_x);
-                printf("I %d\n-\n", i);
-
-                setColor(i, tile_type::None);
+                unsigned int i = (unsigned int)floor((double)n_y * (double)grid_size + (double)n_x);
+                if (i >= 0 && i < (unsigned int)grid_range) {
+                    setColor(i, tile_type::sand);
+                }
             }
         }
+
+        update_physics();
         window->draw(grid_spr);
     }
 
@@ -208,12 +239,11 @@ class Grid
 };
 
 
+
 int main(void)
 {
     sf::RenderWindow window(sf::VideoMode(WIDTH, HEIGHT), "AreiaBox");
     Grid grid(TILES);
-
-    int I = 0;
 
     while (window.isOpen())
     {
@@ -228,16 +258,9 @@ int main(void)
             }
         }
 
-        if (I < 1600)
-        {
-            printf("I: %d\n", I);
-            grid.setColor(I, tile_type::None);
-            I++;
-        }
-
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W))
         {
-            grid.changeTile();
+            grid.setColor(1585, tile_type::sand);
         }
 
         grid.Update(&window);
